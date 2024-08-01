@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #searchInput {
+            width: calc(100% - 20px);
+            max-width: 800px;
+            padding: 15px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .category-btn {
+            margin: 10px 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        .category-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .category-btn.disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .character-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+            padding: 10px 0;
+        }
+
+        .character {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            margin: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .character:hover {
+            background-color: #e0e0e0;
+            transform: scale(1.5);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .character.selected {
+            border: none;
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .output, .saved-characters {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        .output span, .saved-characters span {
+            display: inline-block;
+            padding: 5px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin-top: 5px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        @media (max-width: 600px) {
+            .character {
+                width: 30px;
+                height: 30px;
+                line-height: 30px;
+            }
+
+            .character:hover {
+                transform: scale(1.4);
+            }
+
+            .output, .saved-characters {
+                font-size: 1em;
+            }
+
+            button {
+                margin-left: 5px;
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #searchInput {
+                width: 100%;
+                padding: 8px;
+                font-size: 0.9em;
+            }
+
+            .character {
+                width: 25px;
+                height: 25px;
+                line-height: 25px;
+                margin: 3px;
+            }
+
+            .character:hover {
+                transform: scale(1.3);
+            }
+
+            .output, .saved-characters {
+                font-size: 0.9em;
+            }
+
+            button {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+        }
+
+        /* Dark Mode Styles */
+        .dark-mode {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+
+        .dark-mode #searchInput {
+            background-color: #555;
+            color: #f0f0f0;
+            border-color: #666;
+        }
+
+        .dark-mode .character {
+            border-color: #666;
+        }
+
+        .dark-mode .character:hover {
+            background-color: #666;
+        }
+
+        .dark-mode .output span, .dark-mode .saved-characters span {
+            background-color: #555;
+            border-color: #666;
+        }
+
+        .dark-mode .category-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .dark-mode .category-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .dark-mode button {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .dark-mode button:hover {
+            background-color: #218838;
+        }
+
+    </style>
+</head>
+<body>
+    <input type="text" id="searchInput" placeholder="Search characters..." oninput="filterCharacters()" aria-label="Search characters">
+    <div>
+        <button class="category-btn" data-category="latin" onclick="loadCategory('latin')">Latin</button>
+        <button class="category-btn" data-category="greek" onclick="loadCategory('greek')">Greek</button>
+        <button class="category-btn" data-category="cyrillic" onclick="loadCategory('cyrillic')">Cyrillic</button>
+        <button class="category-btn" data-category="punctuation" onclick="loadCategory('punctuation')">Punctuation</button>
+        <button class="category-btn" data-category="math" onclick="loadCategory('math')">Math Symbols</button>
+    </div>
+    <div class="character-container" id="characterContainer">
+        <!-- Characters will be generated here -->
+    </div>
+    <div id="reset">
+        <button onclick="resetCategory()">Reset Category</button>
+        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    </div>
+    <div class="output">
+        Selected Character: <span id="selectedCharacter">None</span>
+        <button onclick="copyToClipboard()">Copy Selected</button>
+    </div>
+    <div class="saved-characters">
+        Saved Characters: <span id="savedCharacters"></span>
+        <button onclick="clearSavedCharacters()">Clear Saved</button>
+        <button onclick="copySavedCharacters()">Copy Saved</button>
+    </div>
+    <script>
+        const characterCategories = {
+            latin: [65, 90, 97, 122], // A-Z, a-z
+            greek: [913, 937, 945, 969], // Α-Ω, α-ω
+            cyrillic: [1040, 1103], // А-Я, а-я
+            punctuation: [33, 47, 58, 64, 91, 96, 123, 126], // Punctuation characters
+            math: [8704, 8959, 10176, 10223] // Math symbols (Mathematical Operators, Supplemental Mathematical Operators)
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCategory('latin');
+        });
+
+        function loadCategory(category) {
+            const characterContainer = document.getElementById("characterContainer");
+            characterContainer.innerHTML = '';
+            const ranges = characterCategories[category];
+            const buttons = document.querySelectorAll('.category-btn');
+
+            // Enable all buttons initially
+            buttons.forEach(button => {
+                button.classList.remove('disabled');
+                button.onclick = () => loadCategory(button.dataset.category);
+            });
+
+            for (let i = 0; i < ranges.length; i += 2) {
+                const start = ranges[i];
+                const end = ranges[i + 1];
+
+                for (let charCode = start; charCode <= end; charCode++) {
+                    const character = String.fromCharCode(charCode);
+                    const charElement = document.createElement("div");
+                    charElement.className = "character";
+                    charElement.textContent = character;
+                    charElement.dataset.char = character;
+                    charElement.setAttribute('role', 'button');
+                    charElement.setAttribute('aria-label', `Select character ${character}`);
+                    charElement.addEventListener("click", () => {
+                        document.querySelectorAll('.character').forEach(elem => {
+                            elem.classList.remove('selected');
+                        });
+                        charElement.classList.add('selected');
+                        document.getElementById("selectedCharacter").textContent = character;
+                        saveCharacter(character);
+                    });
+                    characterContainer.appendChild(charElement);
+                }
+            }
+        }
+
+        // Reset the category to Latin
+        function resetCategory() {
+            document.getElementById("searchInput").value = '';
+            loadCategory('latin');
+        }
+
+        // Filter characters based on the search input
+        function filterCharacters() {
+            const searchInput = document.getElementById("searchInput").value.toLowerCase();
+            const characters = document.querySelectorAll(".character");
+            characters.forEach(charElement => {
+                if (charElement.dataset.char.toLowerCase().includes(searchInput)) {
+                    charElement.style.display = "inline-block";
+                } else {
+                    charElement.style.display = "none";
+                }
+            });
+        }
+
+        // Copy the selected character to the clipboard
+        function copyToClipboard() {
+            const selectedCharacter = document.getElementById("selectedCharacter").textContent;
+            if (selectedCharacter !== "None") {
+                navigator.clipboard.writeText(selectedCharacter).then(() => {
+                    alert("Character copied to clipboard!");
+                }).catch(err => {
+                    console.error("Could not copy text: ", err);
+                });
+            } else {
+                alert("No character selected to copy.");
+            }
+        }
+
+        // Array to hold saved characters
+        const savedCharacters = [];
+
+        // Save the selected character
+        function saveCharacter(character) {
+            if (!savedCharacters.includes(character)) {
+                savedCharacters.push(character);
+                updateSavedCharactersDisplay();
+            }
+        }
+
+        // Update the display of saved characters
+        function updateSavedCharactersDisplay() {
+            const savedDisplay = document.getElementById("savedCharacters");
+            savedDisplay.textContent = savedCharacters.join(" ");
+        }
+
+        // Clear saved characters
+        function clearSavedCharacters() {
+            savedCharacters.length = 0;
+            updateSavedCharactersDisplay();
+        }
+
+        // Copy saved characters to the clipboard
+        function copySavedCharacters() {
+            const savedCharsString = savedCharacters.join(" ");
+            if (savedCharsString) {
+                navigator.clipboard.writeText(savedCharsString).then(() => {
+                    alert("Saved characters copied to clipboard!");
+                }).catch(err => {
+                    console.error("Could not copy text: ", err);
+                });
+            } else {
+                alert("No saved characters to copy.");
+            }
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+    </script>
+</body>
+</html>
